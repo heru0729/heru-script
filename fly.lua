@@ -1,16 +1,13 @@
--- プレイヤーとサービスの取得
 local player = game.Players.LocalPlayer
 local uis = game:GetService("UserInputService")
 local rs = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 
--- 変数の初期化
 local flying = false
 local speed = 50
 local bodyGyro = nil
 local bodyVelocity = nil
 
--- 飛行トグル関数
 local function toggleFly()
     flying = not flying
     
@@ -23,7 +20,6 @@ local function toggleFly()
     if not humanoid or not rootPart then return end
     
     if flying then
-        -- 飛行開始
         humanoid.PlatformStand = true
         
         bodyGyro = Instance.new("BodyGyro")
@@ -36,14 +32,12 @@ local function toggleFly()
         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         bodyVelocity.Parent = rootPart
     else
-        -- 飛行終了
         if bodyGyro then bodyGyro:Destroy() end
         if bodyVelocity then bodyVelocity:Destroy() end
         humanoid.PlatformStand = false
     end
 end
 
--- 移動処理
 rs.Heartbeat:Connect(function()
     if not flying then return end
     
@@ -53,10 +47,8 @@ rs.Heartbeat:Connect(function()
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart or not bodyGyro or not bodyVelocity then return end
     
-    -- カメラの方向を向く
     bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + camera.CFrame.LookVector)
     
-    -- 移動方向の計算
     local moveDirection = Vector3.new()
     
     if uis:IsKeyDown(Enum.KeyCode.W) then
@@ -78,7 +70,6 @@ rs.Heartbeat:Connect(function()
         moveDirection = moveDirection + Vector3.new(0, -1, 0)
     end
     
-    -- 速度を適用
     if moveDirection.Magnitude > 0 then
         bodyVelocity.Velocity = moveDirection.Unit * speed
     else
@@ -86,28 +77,22 @@ rs.Heartbeat:Connect(function()
     end
 end)
 
--- キー入力処理
 uis.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- Fキーで飛行ON/OFF
     if input.KeyCode == Enum.KeyCode.F then
         toggleFly()
     end
     
-    -- 飛行中のみ速度変更可能
     if flying then
         if input.KeyCode == Enum.KeyCode.Up then
             speed = math.min(speed + 10, 200)
-            print("飛行速度: " .. speed)
         elseif input.KeyCode == Enum.KeyCode.Down then
             speed = math.max(speed - 10, 10)
-            print("飛行速度: " .. speed)
         end
     end
 end)
 
--- キャラクター再出現時の処理
 player.CharacterAdded:Connect(function()
     if flying then
         flying = false
@@ -115,5 +100,3 @@ player.CharacterAdded:Connect(function()
         if bodyVelocity then bodyVelocity:Destroy() end
     end
 end)
-
-print("飛行スクリプト読み込み完了！ FキーでON/OFF")
