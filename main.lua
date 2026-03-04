@@ -1,5 +1,5 @@
 --[[
-Sirius - カスタム版 (オートエイム追加)
+Sirius - カスタム版 (オートエイム追加、バー表示修正版)
 --]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -43,10 +43,9 @@ local oldVolume = gameSettings.MasterVolume
 
 -- オートエイム設定
 local aimbotEnabled = false
-local aimbotKey = Enum.KeyCode.Q -- QキーでオートエイムON/OFF
-local aimbotRange = 100 -- 範囲
-local aimbotSmoothness = 0.5 -- スムーズさ (0-1、小さいほどスムーズ)
-local aimbotTargetPart = "Head" -- 狙う部位 ("Head", "HumanoidRootPart", "Torso")
+local aimbotRange = 100
+local aimbotSmoothness = 0.5
+local aimbotTargetPart = "Head"
 
 local siriusValues = {
 	siriusVersion = "1.26",
@@ -385,8 +384,8 @@ local siriusSettings = {
 	},
 }
 
-local randomAdjective = siriusValues.nameGeneration and siriusValues.nameGeneration.adjectives[math.random(1, #siriusValues.nameGeneration.adjectives)] or "Cool"
-local randomNoun = siriusValues.nameGeneration and siriusValues.nameGeneration.nouns[math.random(1, #siriusValues.nameGeneration.nouns)] or "Player"
+local randomAdjective = "Cool"
+local randomNoun = "Player"
 local randomNumber = math.random(100, 3999)
 local randomUsername = randomAdjective .. randomNoun .. randomNumber
 
@@ -622,7 +621,6 @@ local function queueNotification(Title, Description, Image)
 end
 
 local function checkLastVersion() checkFolder() end
-
 local function removeReverbs(timing) end
 
 local function updateSliderPadding()
@@ -926,6 +924,7 @@ local function ensureFrameProperties()
 	scriptsPanel.Visible = false
 	settingsPanel.Visible = false
 	smartBar.Visible = false
+	smartBar.Position = UDim2.new(0.5, 0, 1.05, 0)
 	if not getcustomasset then smartBar.Buttons.Music.Visible = false end
 	toastsContainer.Visible = true
 	makeDraggable(settingsPanel)
@@ -1081,13 +1080,20 @@ local function closeHome()
 end
 
 local function openSmartBar()
+	print("openSmartBar() が呼ばれました")
 	smartBarOpen = true
+	
+	if not smartBar then
+		print("エラー: smartBarがありません")
+		return
+	end
+	
+	smartBar.Visible = true
 	coreGui.RobloxGui.Backpack.Position = UDim2.new(0,0,0,0)
 	smartBar.BackgroundTransparency = 1
 	smartBar.Time.TextTransparency = 1
 	smartBar.UIStroke.Transparency = 1
 	smartBar.Shadow.ImageTransparency = 1
-	smartBar.Visible = true
 	smartBar.Position = UDim2.new(0.5, 0, 1.05, 0)
 	smartBar.Size = UDim2.new(0, 531, 0, 64)
 	toggle.Rotation = 180
@@ -1618,22 +1624,44 @@ local function start()
 	sortActions()
 	initialiseAntiKick()
 	checkLastVersion()
+	
+	-- 設定を保存
+	saveSettings()
+	
 	smartBar.Time.Text = os.date("%H")..":"..os.date("%M")
 	toggle.Visible = not checkSetting("Hide Toggle Button").current
 	
-	-- ★★★ ここに0.5秒の待機を追加 ★★★
-	task.wait(0.5)
+	-- 少し待ってからバーを開く
+	task.wait(1)
 	
-	if not checkSetting("Load Hidden").current then 
+	local loadHidden = checkSetting("Load Hidden").current
+	print("Load Hidden設定:", loadHidden)
+	
+	if not loadHidden then 
+		print("バーを開きます")
+		smartBar.Visible = true
+		smartBarOpen = true
 		openSmartBar() 
 	else 
+		print("バーを閉じます")
 		closeSmartBar() 
 	end
 end
 
 start()
 
-toggle.MouseButton1Click:Connect(function() if smartBarOpen then closeSmartBar() else openSmartBar() end end)
+if toggle then
+	toggle.MouseButton1Click:Connect(function() 
+		print("トグルクリック: smartBarOpen =", smartBarOpen)
+		if smartBarOpen then 
+			closeSmartBar() 
+		else 
+			openSmartBar() 
+		end 
+	end)
+else
+	print("エラー: toggleが見つかりません")
+end
 
 characterPanel.Interactions.Reset.MouseButton1Click:Connect(function()
 	resetSliders()
@@ -1754,8 +1782,14 @@ userInputService.InputBegan:Connect(function(input, processed)
 			end
 		end
 	end
-	if input.KeyCode == Enum.KeyCode[checkSetting("Toggle smartBar").current] and not processed and not debounce then
-		if smartBarOpen then closeSmartBar() else openSmartBar() end
+	local smartbarKey = checkSetting("Toggle smartBar").current
+	if input.KeyCode == Enum.KeyCode[smartbarKey] and not processed and not debounce then
+		print("Kキーが認識されました！ smartBarOpen=", smartBarOpen)
+		if smartBarOpen then 
+			closeSmartBar() 
+		else 
+			openSmartBar() 
+		end
 	end
 end)
 
