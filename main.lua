@@ -1620,7 +1620,15 @@ local function start()
 	checkLastVersion()
 	smartBar.Time.Text = os.date("%H")..":"..os.date("%M")
 	toggle.Visible = not checkSetting("Hide Toggle Button").current
-	if not checkSetting("Load Hidden").current then openSmartBar() else closeSmartBar() end
+	
+	-- ★★★ ここに0.5秒の待機を追加 ★★★
+	task.wait(0.5)
+	
+	if not checkSetting("Load Hidden").current then 
+		openSmartBar() 
+	else 
+		closeSmartBar() 
+	end
 end
 
 start()
