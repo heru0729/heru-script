@@ -1935,3 +1935,12 @@ while task.wait(1) do
 	end
 	toggle.Visible = not checkSetting("Hide Toggle Button").current
 end
+-- デバッグコード（スクリプトの最後に追加）
+print("===== デバッグ情報 =====")
+print("UI存在:", UI ~= nil)
+print("smartBar存在:", smartBar ~= nil)
+print("toggle存在:", toggle ~= nil)
+print("smartBar.Visible:", smartBar and smartBar.Visible)
+print("smartBarOpen:", smartBarOpen)
+print("Load Hidden設定:", checkSetting and checkSetting("Load Hidden").current)
+print("UI.Enabled:", UI and UI.Enabled)
