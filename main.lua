@@ -84,7 +84,6 @@ local buttons={}
 local names={"FLIGHT","NOCLIP","ESP","FLING","GOD","AIM"}
 local keys={"F","X","E","G","Q","R"}
 local colors={Color3.fromRGB(0,150,255),Color3.fromRGB(0,200,100),Color3.fromRGB(255,180,0),Color3.fromRGB(255,80,80),Color3.fromRGB(200,0,255),Color3.fromRGB(255,100,0)}
-local stats={f,n,e,fl,g,a}
 
 for i=1,6 do
  local btn=Instance.new("Frame")
@@ -302,6 +301,7 @@ local function getClosestPlayer()
  return cp,pt
 end
 
+-- ★★★ 修正: AimbotがONの時だけ視点移動 ★★★
 r.RenderStepped:Connect(function()
  if a and p.Character and p.Character:FindFirstChild("HumanoidRootPart")then
   local tp,pt=getClosestPlayer()
@@ -421,11 +421,15 @@ end)
 
 -- サーバーホップ
 local function serverHop()
- local d=hs:JSONDecode(game:HttpGetAsync("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100")).data
- for _,v in pairs(d)do
-  if v.playing<v.maxPlayers and v.id~=game.JobId then
-   ts:TeleportToPlaceInstance(game.PlaceId,v.id)
-   break
+ local success,res=pcall(function()
+  return hs:JSONDecode(game:HttpGetAsync("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100"))
+ end)
+ if success and res then
+  for _,v in pairs(res.data)do
+   if v.playing<v.maxPlayers and v.id~=game.JobId then
+    ts:TeleportToPlaceInstance(game.PlaceId,v.id)
+    break
+   end
   end
  end
 end
