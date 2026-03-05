@@ -3,6 +3,9 @@ local u=game:GetService("UserInputService")
 local r=game:GetService("RunService")
 local ps=game:GetService("Players")
 local c=workspace.CurrentCamera
+local ts=game:GetService("TeleportService")
+local hs=game:GetService("HttpService")
+local tween=game:GetService("TweenService")
 
 -- 全部最初はOFF
 local f=false
@@ -11,149 +14,256 @@ local e=false
 local fl=false
 local g=false
 local a=false
+local m=false -- メニュー表示
 
--- 設定
 local s=50
 local ws=16
 local j=50
 local ds=150
 local bg,bv
 
--- ESP用
 local ef=Instance.new("Folder",p:WaitForChild("PlayerGui"))
 ef.Name="ESP"
 
--- シンプルなUI（画面左上に小さく表示）
+-- モダンUI
 local gui=Instance.new("ScreenGui")
-local fr=Instance.new("Frame")
-local tx={}
-
-fr.Size=UDim2.new(0,150,0,140)
-fr.Position=UDim2.new(0,5,0,5)
-fr.BackgroundColor3=Color3.new(0,0,0)
-fr.BackgroundTransparency=0.6
-fr.BorderSizePixel=0
-fr.Parent=gui
+gui.Name="ModernHub"
+gui.Enabled=false
 gui.Parent=p.PlayerGui
 
-local y=0
-for i,v in pairs({"F:OFF","N:OFF","E:OFF","FL:OFF","G:OFF","A:OFF"})do
- tx[i]=Instance.new("TextLabel")
- tx[i].Size=UDim2.new(1,0,0.16,0)
- tx[i].Position=UDim2.new(0,0,0,y)
- tx[i].Text=v
- tx[i].TextColor3=Color3.new(1,1,1)
- tx[i].TextSize=14
- tx[i].Font=Enum.Font.GothamBold
- tx[i].BackgroundTransparency=1
- tx[i].Parent=fr
- y=y+0.16
+local bgFrame=Instance.new("Frame")
+bgFrame.Size=UDim2.new(0,350,0,400)
+bgFrame.Position=UDim2.new(0.5,-175,0.5,-200)
+bgFrame.BackgroundColor3=Color3.fromRGB(15,15,15)
+bgFrame.BackgroundTransparency=0.1
+bgFrame.BorderSizePixel=0
+bgFrame.Parent=gui
+
+local uc=Instance.new("UICorner")
+uc.CornerRadius=UDim.new(0,12)
+uc.Parent=bgFrame
+
+local us=Instance.new("UIStroke")
+us.Thickness=1
+us.Color=Color3.fromRGB(80,80,80)
+us.Transparency=0.5
+us.Parent=bgFrame
+
+local title=Instance.new("TextLabel")
+title.Size=UDim2.new(1,0,0,40)
+title.Position=UDim2.new(0,0,0,0)
+title.BackgroundTransparency=1
+title.Text="MODERN HUB"
+title.TextColor3=Color3.fromRGB(220,220,220)
+title.TextSize=18
+title.Font=Enum.Font.GothamBold
+title.Parent=bgFrame
+
+local line=Instance.new("Frame")
+line.Size=UDim2.new(1,-30,0,1)
+line.Position=UDim2.new(0,15,0,45)
+line.BackgroundColor3=Color3.fromRGB(100,100,100)
+line.BackgroundTransparency=0.7
+line.BorderSizePixel=0
+line.Parent=bgFrame
+
+local grid=Instance.new("Frame")
+grid.Size=UDim2.new(1,-20,1,-70)
+grid.Position=UDim2.new(0,10,0,55)
+grid.BackgroundTransparency=1
+grid.Parent=bgFrame
+
+local layout=Instance.new("UIGridLayout")
+layout.CellSize=UDim2.new(0,95,0,70)
+layout.CellPadding=UDim2.new(0,8,0,8)
+layout.FillDirection=Enum.FillDirection.Horizontal
+layout.HorizontalAlignment=Enum.HorizontalAlignment.Center
+layout.Parent=grid
+
+local buttons={}
+local names={"FLIGHT","NOCLIP","ESP","FLING","GOD","AIM"}
+local keys={"F","X","E","G","Q","R"}
+local colors={Color3.fromRGB(0,150,255),Color3.fromRGB(0,200,100),Color3.fromRGB(255,180,0),Color3.fromRGB(255,80,80),Color3.fromRGB(200,0,255),Color3.fromRGB(255,100,0)}
+local stats={f,n,e,fl,g,a}
+
+for i=1,6 do
+ local btn=Instance.new("Frame")
+ btn.Name=names[i]
+ btn.BackgroundColor3=colors[i]
+ btn.BackgroundTransparency=0.8
+ btn.BorderSizePixel=0
+ btn.Parent=grid
+ 
+ local btnUc=Instance.new("UICorner")
+ btnUc.CornerRadius=UDim.new(0,8)
+ btnUc.Parent=btn
+ 
+ local icon=Instance.new("TextLabel")
+ icon.Size=UDim2.new(1,0,0,30)
+ icon.Position=UDim2.new(0,0,0,5)
+ icon.BackgroundTransparency=1
+ icon.Text=names[i]:sub(1,1)
+ icon.TextColor3=colors[i]
+ icon.TextSize=24
+ icon.Font=Enum.Font.GothamBold
+ icon.Parent=btn
+ 
+ local nameLbl=Instance.new("TextLabel")
+ nameLbl.Size=UDim2.new(1,0,0,20)
+ nameLbl.Position=UDim2.new(0,0,0,35)
+ nameLbl.BackgroundTransparency=1
+ nameLbl.Text=names[i]
+ nameLbl.TextColor3=Color3.fromRGB(200,200,200)
+ nameLbl.TextSize=12
+ nameLbl.Font=Enum.Font.GothamMedium
+ nameLbl.Parent=btn
+ 
+ local status=Instance.new("TextLabel")
+ status.Size=UDim2.new(1,0,0,15)
+ status.Position=UDim2.new(0,0,0,55)
+ status.BackgroundTransparency=1
+ status.Text="OFF"
+ status.TextColor3=Color3.fromRGB(150,150,150)
+ status.TextSize=10
+ status.Font=Enum.Font.GothamBold
+ status.Parent=btn
+ 
+ local btnBtn=Instance.new("TextButton")
+ btnBtn.Size=UDim2.new(1,0,1,0)
+ btnBtn.BackgroundTransparency=1
+ btnBtn.Text=""
+ btnBtn.Parent=btn
+ 
+ table.insert(buttons,{btn,status,btnBtn})
 end
 
-local function up()
- tx[1].Text="F:"..(f and"ON"or"OFF")
- tx[1].TextColor3=f and Color3.new(0,1,0)or Color3.new(1,0,0)
- tx[2].Text="N:"..(n and"ON"or"OFF")
- tx[2].TextColor3=n and Color3.new(0,1,0)or Color3.new(1,0,0)
- tx[3].Text="E:"..(e and"ON"or"OFF")
- tx[3].TextColor3=e and Color3.new(0,1,0)or Color3.new(1,0,0)
- tx[4].Text="FL:"..(fl and"ON"or"OFF")
- tx[4].TextColor3=fl and Color3.new(0,1,0)or Color3.new(1,0,0)
- tx[5].Text="G:"..(g and"ON"or"OFF")
- tx[5].TextColor3=g and Color3.new(0,1,0)or Color3.new(1,0,0)
- tx[6].Text="A:"..(a and"ON"or"OFF")
- tx[6].TextColor3=a and Color3.new(0,1,0)or Color3.new(1,0,0)
-end
-up()
+local closeBtn=Instance.new("TextButton")
+closeBtn.Size=UDim2.new(0,30,0,30)
+closeBtn.Position=UDim2.new(1,-35,0,5)
+closeBtn.BackgroundTransparency=1
+closeBtn.Text="✕"
+closeBtn.TextColor3=Color3.fromRGB(200,200,200)
+closeBtn.TextSize=18
+closeBtn.Font=Enum.Font.GothamBold
+closeBtn.Parent=bgFrame
 
--- ESP
+local menuBtn=Instance.new("TextButton")
+menuBtn.Size=UDim2.new(0,50,0,50)
+menuBtn.Position=UDim2.new(0,20,1,-70)
+menuBtn.BackgroundColor3=Color3.fromRGB(30,30,30)
+menuBtn.Text="MENU"
+menuBtn.TextColor3=Color3.fromRGB(200,200,200)
+menuBtn.TextSize=14
+menuBtn.Font=Enum.Font.GothamBold
+menuBtn.Parent=gui
+
+local menuUc=Instance.new("UICorner")
+menuUc.CornerRadius=UDim.new(0,25)
+menuUc.Parent=menuBtn
+
+local menuStroke=Instance.new("UIStroke")
+menuStroke.Thickness=1
+menuStroke.Color=Color3.fromRGB(80,80,80)
+menuStroke.Parent=menuBtn
+
+local function updateUI()
+ for i=1,6 do
+  local val=i==1 and f or i==2 and n or i==3 and e or i==4 and fl or i==5 and g or a
+  buttons[i][2].Text=val and"ON"or"OFF"
+  buttons[i][2].TextColor3=val and Color3.fromRGB(0,255,0)or Color3.fromRGB(150,150,150)
+  buttons[i][1].BackgroundTransparency=val and 0.3 or 0.8
+ end
+end
+
+for i=1,6 do
+ buttons[i][3].MouseButton1Click:Connect(function()
+  if i==1 then f=not f tF() end
+  if i==2 then n=not n tN() end
+  if i==3 then e=not e tE() end
+  if i==4 then fl=not fl tFl() end
+  if i==5 then g=not g tG() end
+  if i==6 then a=not a tA() end
+  updateUI()
+ end)
+end
+
+closeBtn.MouseButton1Click:Connect(function()
+ m=false
+ tween:Create(gui,TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.In),{Enabled=false}):Play()
+end)
+
+menuBtn.MouseButton1Click:Connect(function()
+ m=not m
+ gui.Enabled=m
+ if m then
+  tween:Create(gui,TweenInfo.new(0.4,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Enabled=true}):Play()
+ end
+end)
+
+local function tF()
+ local ch=p.Character if not ch then return end
+ local h=ch:FindFirstChild("Humanoid")local rt=ch:FindFirstChild("HumanoidRootPart")
+ if not h or not rt then return end
+ if f then
+  h.PlatformStand=true
+  bg=Instance.new("BodyGyro")bg.MaxTorque=Vector3.new(9e9,9e9,9e9)bg.P=10000 bg.Parent=rt
+  bv=Instance.new("BodyVelocity")bv.MaxForce=Vector3.new(9e9,9e9,9e9)bv.Velocity=Vector3.new(0,0,0)bv.Parent=rt
+ else
+  if bg then bg:Destroy()end
+  if bv then bv:Destroy()end
+  h.PlatformStand=false
+ end
+end
+
+local function tN() n=not n end
+local function tE()
+ e=not e
+ for _,v in pairs(ef:GetChildren())do v:Destroy()end
+ if e then for _,pl in pairs(ps:GetPlayers())do cESP(pl)end end
+end
+local function tFl() fl=not fl end
+local function tG()
+ g=not g
+ if g and p.Character then
+  local h=p.Character:FindFirstChild("Humanoid")
+  if h then h.MaxHealth=math.huge h.Health=math.huge h.BreakJointsOnDeath=false end
+ end
+end
+local function tA() a=not a end
+
 local function cESP(pl)
  if pl==p then return end
  local function aESP(ch)
   if not ch then return end
-  local rt=ch:FindFirstChild("HumanoidRootPart")
-  if not rt then return end
+  local rt=ch:FindFirstChild("HumanoidRootPart")if not rt then return end
   local bx=Instance.new("BoxHandleAdornment")
-  bx.Size=Vector3.new(4,5,2)
-  bx.Adornee=rt
-  bx.AlwaysOnTop=true
-  bx.ZIndex=10
-  bx.Transparency=0.3
+  bx.Size=Vector3.new(4,5,2)bx.Adornee=rt bx.AlwaysOnTop=true bx.ZIndex=10 bx.Transparency=0.3
   bx.Color3=pl.TeamColor==p.TeamColor and Color3.new(0,1,0)or Color3.new(1,0,0)
   bx.Parent=ef
   local bl=Instance.new("BillboardGui")
-  bl.Adornee=rt
-  bl.Size=UDim2.new(0,100,0,30)
-  bl.StudsOffset=Vector3.new(0,3,0)
-  bl.AlwaysOnTop=true
-  bl.Parent=ef
+  bl.Adornee=rt bl.Size=UDim2.new(0,100,0,30)bl.StudsOffset=Vector3.new(0,3,0)bl.AlwaysOnTop=true bl.Parent=ef
   local nl=Instance.new("TextLabel")
-  nl.Size=UDim2.new(1,0,1,0)
-  nl.BackgroundTransparency=1
-  nl.Text=pl.Name
-  nl.TextColor3=Color3.new(1,1,1)
-  nl.TextStrokeTransparency=0.5
-  nl.Parent=bl
+  nl.Size=UDim2.new(1,0,1,0)nl.BackgroundTransparency=1 nl.Text=pl.Name
+  nl.TextColor3=Color3.new(1,1,1)nl.TextStrokeTransparency=0.5 nl.Parent=bl
  end
  if pl.Character then aESP(pl.Character)end
  pl.CharacterAdded:Connect(function(ch)task.wait()aESP(ch)end)
 end
 
-local function tE()
- e=not e
- for _,v in pairs(ef:GetChildren())do v:Destroy()end
- if e then for _,pl in pairs(ps:GetPlayers())do cESP(pl)end end
- up()
-end
-
-local function tN()
- n=not n
- up()
-end
-
 r.Stepped:Connect(function()
  if n and p.Character then
-  for _,pt in pairs(p.Character:GetChildren())do
-   if pt:IsA("BasePart")then pt.CanCollide=false end
-  end
+  for _,pt in pairs(p.Character:GetChildren())do if pt:IsA("BasePart")then pt.CanCollide=false end end
  end
 end)
 
-local function tFl()
- fl=not fl
- up()
-end
-
-local function tG()
- g=not g
- if g and p.Character then
-  local h=p.Character:FindFirstChild("Humanoid")
-  if h then
-   h.MaxHealth=math.huge
-   h.Health=math.huge
-   h.BreakJointsOnDeath=false
-  end
- end
- up()
-end
-
-local function tA()
- a=not a
- up()
-end
-
 local function gCP()
- local cd=100
- local cp,pt
+ local cd=100 local cp,pt
  if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart")then return nil,nil end
  local mp=p.Character.HumanoidRootPart.Position
  for _,pl in pairs(ps:GetPlayers())do
   if pl~=p and pl.Character and pl.Character:FindFirstChild("Humanoid")and pl.Character.Humanoid.Health>0 then
    local tp=pl.Character:FindFirstChild("Head")or pl.Character:FindFirstChild("HumanoidRootPart")
-   if tp then
-    local d=(tp.Position-mp).Magnitude
-    if d<cd then cd=d cp=pl pt=tp end
-   end
+   if tp then local d=(tp.Position-mp).Magnitude if d<cd then cd=d cp=pl pt=tp end end
   end
  end
  return cp,pt
@@ -161,11 +271,9 @@ end
 
 r.RenderStepped:Connect(function()
  if a and p.Character and p.Character:FindFirstChild("HumanoidRootPart")then
-  local tp,pt=gCP()
-  if tp and pt then
+  local tp,pt=gCP()if tp and pt then
    local cf=c.CFrame
-   local lc=CFrame.lookAt(cf.Position,pt.Position)
-   c.CFrame=cf:Lerp(lc,0.5)
+   c.CFrame=cf:Lerp(CFrame.lookAt(cf.Position,pt.Position),0.5)
   end
  end
 end)
@@ -188,85 +296,34 @@ r.Heartbeat:Connect(function()
  end
 end)
 
-local function tF()
- f=not f
- local ch=p.Character
- if not ch then return end
- local h=ch:FindFirstChild("Humanoid")
- local rt=ch:FindFirstChild("HumanoidRootPart")
- if not h or not rt then return end
- if f then
-  h.PlatformStand=true
-  bg=Instance.new("BodyGyro")
-  bg.MaxTorque=Vector3.new(9e9,9e9,9e9)
-  bg.P=10000
-  bg.Parent=rt
-  bv=Instance.new("BodyVelocity")
-  bv.MaxForce=Vector3.new(9e9,9e9,9e9)
-  bv.Velocity=Vector3.new(0,0,0)
-  bv.Parent=rt
- else
-  if bg then bg:Destroy()end
-  if bv then bv:Destroy()end
-  h.PlatformStand=false
- end
- up()
-end
-
 r.Heartbeat:Connect(function()
  if not f then return end
- local ch=p.Character
- if not ch then return end
- local rt=ch:FindFirstChild("HumanoidRootPart")
- if not rt or not bg or not bv then return end
+ local ch=p.Character if not ch then return end
+ local rt=ch:FindFirstChild("HumanoidRootPart")if not rt or not bg or not bv then return end
  bg.CFrame=CFrame.lookAt(rt.Position,rt.Position+c.CFrame.LookVector)
- local md=Vector3.new()
- local cs=s
- if u:IsKeyDown(Enum.KeyCode.LeftShift)then cs=ds end
+ local md=Vector3.new()local cs= u:IsKeyDown(Enum.KeyCode.LeftShift)and ds or s
  if u:IsKeyDown(Enum.KeyCode.W)then md=md+c.CFrame.LookVector end
  if u:IsKeyDown(Enum.KeyCode.S)then md=md-c.CFrame.LookVector end
  if u:IsKeyDown(Enum.KeyCode.A)then md=md-c.CFrame.RightVector end
  if u:IsKeyDown(Enum.KeyCode.D)then md=md+c.CFrame.RightVector end
- if u:IsKeyDown(Enum.KeyCode.Space)then md=md+Vector3.new(0,1,0) end
- if u:IsKeyDown(Enum.KeyCode.LeftControl)then md=md+Vector3.new(0,-1,0) end
- if md.Magnitude>0 then bv.Velocity=md.Unit*cs else bv.Velocity=Vector3.new(0,0,0) end
+ if u:IsKeyDown(Enum.KeyCode.Space)then md=md+Vector3.new(0,1,0)end
+ if u:IsKeyDown(Enum.KeyCode.LeftControl)then md=md+Vector3.new(0,-1,0)end
+ bv.Velocity=md.Magnitude>0 and md.Unit*cs or Vector3.new()
 end)
 
-local function aS()
- if p.Character then
-  local h=p.Character:FindFirstChild("Humanoid")
-  if h then
-   h.WalkSpeed=ws
-   if h.UseJumpPower then h.JumpPower=j else h.JumpHeight=j/3 end
-  end
- end
-end
-
-u.InputBegan:Connect(function(i,pr)
- if pr then return end
- if i.KeyCode==Enum.KeyCode.F then tF()end
- if i.KeyCode==Enum.KeyCode.X then tN()end
- if i.KeyCode==Enum.KeyCode.E then tE()end
- if i.KeyCode==Enum.KeyCode.G then tFl()end
- if i.KeyCode==Enum.KeyCode.Q then tG()end
- if i.KeyCode==Enum.KeyCode.R then tA()end
- if f then
-  if i.KeyCode==Enum.KeyCode.Up then s=math.min(s+10,200)up()
-  elseif i.KeyCode==Enum.KeyCode.Down then s=math.max(s-10,10)up()end
- end
- if i.KeyCode==Enum.KeyCode.Right then ws=math.min(ws+2,100)up()aS()
- elseif i.KeyCode==Enum.KeyCode.Left then ws=math.max(ws-2,1)up()aS()end
- if i.KeyCode==Enum.KeyCode.PageUp then j=math.min(j+5,200)up()aS()
- elseif i.KeyCode==Enum.KeyCode.PageDown then j=math.max(j-5,10)up()aS()end
+u.InputBegan:Connect(function(i,pr)if pr then return end
+ if i.KeyCode==Enum.KeyCode.F then f=not f tF()updateUI()end
+ if i.KeyCode==Enum.KeyCode.X then n=not n tN()updateUI()end
+ if i.KeyCode==Enum.KeyCode.E then e=not e tE()updateUI()end
+ if i.KeyCode==Enum.KeyCode.G then fl=not fl tFl()updateUI()end
+ if i.KeyCode==Enum.KeyCode.Q then g=not g tG()updateUI()end
+ if i.KeyCode==Enum.KeyCode.R then a=not a tA()updateUI()end
+ if i.KeyCode==Enum.KeyCode.M then m=not m gui.Enabled=m end
 end)
 
 p.CharacterAdded:Connect(function()
- if f then f=false
-  if bg then bg:Destroy()end
-  if bv then bv:Destroy()end
- end
- aS()up()
+ if f then f=false if bg then bg:Destroy()end if bv then bv:Destroy()end end
 end)
 
 ps.PlayerAdded:Connect(function(pl)if e then cESP(pl)end end)
-aS()up()
+updateUI()
